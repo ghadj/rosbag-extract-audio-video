@@ -9,9 +9,9 @@
   <author email="yanokura@jsk.imi.i.u-tokyo.ac.jp">Iori Yanokura</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <buildtool_depend>python-catkin-pkg-modules</buildtool_depend>
+  <buildtool_depend>python3-catkin-pkg-modules</buildtool_depend>
 
-  <build_depend version_gte="0.5.1">catkin_virtualenv</build_depend>
+  <!-- <build_depend version_gte="0.5.1">catkin_virtualenv</build_depend> -->
 
   <exec_depend>audio_common_msgs</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
