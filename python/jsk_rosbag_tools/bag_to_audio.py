@@ -1,8 +1,9 @@
 import os
 import os.path as osp
+import sys
 
 import numpy as np
-import rosbag
+import rosbag, rospy
 from scipy.io.wavfile import write as wav_write
 
 from jsk_rosbag_tools.extract import extract_oneshot_topic
@@ -14,6 +15,8 @@ def bag_to_audio(bag_filepath,
                  wav_outpath,
                  topic_name='/audio',
                  audio_info_topic_name=None,
+                 start_stamp=rospy.Time(0), 
+                 end_stamp=rospy.Time(sys.maxsize),
                  samplerate=44100,
                  channels=1,
                  overwrite=True):
@@ -33,7 +36,7 @@ def bag_to_audio(bag_filepath,
 
     bag = rosbag.Bag(bag_filepath)
     audio_buffer = []
-    for _, msg, _ in bag.read_messages(topics=[topic_name]):
+    for _, msg, _ in bag.read_messages(topics=[topic_name], start_time=start_stamp, end_time=end_stamp):
         if msg._type == 'audio_common_msgs/AudioData':
             buf = np.frombuffer(msg.data, dtype='int16')
             buf = buf.reshape(-1, channels)

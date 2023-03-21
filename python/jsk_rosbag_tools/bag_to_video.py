@@ -5,6 +5,8 @@ import sys
 import tempfile
 
 import cv2
+import rospy
+
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
 from moviepy.video.io.VideoFileClip import VideoFileClip
@@ -20,12 +22,15 @@ from jsk_rosbag_tools.makedirs import makedirs
 from jsk_rosbag_tools.topic_name_utils import topic_name_to_file_name
 
 
-def bag_to_video(input_bagfile,
+def bag_to_video(image_bagfile,
+                 audio_bagfile=None,
                  output_filepath=None,
                  output_dirpath=None,
                  image_topic=None,
                  image_topics=None,
                  fps=30,
+                 start_stamp=rospy.Time(0),
+                 end_stamp=rospy.Time(sys.maxsize),
                  samplerate=16000,
                  channels=1,
                  audio_topic='/audio',
@@ -38,9 +43,9 @@ def bag_to_video(input_bagfile,
     If image_topic_names is None, make all color images into video.
 
     """
-    if not os.path.exists(input_bagfile):
+    if not os.path.exists(image_bagfile):
         print('[bag_to_video] Input bagfile {} not exists.'
-              .format(input_bagfile))
+              .format(image_bagfile))
         sys.exit(1)
 
     if output_filepath is not None and output_dirpath is not None:
@@ -49,7 +54,7 @@ def bag_to_video(input_bagfile,
 
     output_filepaths = []
     target_image_topics = []
-    candidate_topics = get_image_topic_names(input_bagfile)
+    candidate_topics = get_image_topic_names(image_bagfile)
 
     if output_filepath is not None:
         if image_topic is None:
@@ -62,7 +67,7 @@ def bag_to_video(input_bagfile,
         # output_dirpath is specified case.
         if image_topics is None:
             # record all color topics
-            image_topics = get_image_topic_names(input_bagfile,
+            image_topics = get_image_topic_names(image_bagfile,
                                                  rgb_only=True)
         target_image_topics = image_topics
 
@@ -83,7 +88,9 @@ def bag_to_video(input_bagfile,
             ' {}'.format(list(not_exists_topics)))
 
     print('[bag_to_video] Extracting audio from rosbag file.')
-    audio_exists = bag_to_audio(input_bagfile, wav_outpath,
+    audio_exists = bag_to_audio(audio_bagfile, wav_outpath,
+                                start_stamp=start_stamp,
+                                end_stamp=end_stamp,
                                 samplerate=samplerate,
                                 channels=channels,
                                 topic_name=audio_topic)
@@ -92,7 +99,7 @@ def bag_to_video(input_bagfile,
     for image_topic, output_filepath in zip(target_image_topics,
                                             output_filepaths):
         print('[bag_to_video] Creating video of {} from rosbag file {}.'
-              .format(image_topic, input_bagfile))
+              .format(image_topic, image_bagfile))
         filepath_dir = osp.dirname(output_filepath)
         if filepath_dir:
             makedirs(filepath_dir)
@@ -101,8 +108,10 @@ def bag_to_video(input_bagfile,
         else:
             tmp_videopath = output_filepath
 
-        images = extract_image_topic(input_bagfile, image_topic)
-        topic_info_dict = get_topic_dict(input_bagfile)[image_topic]
+        images = extract_image_topic(
+            image_bagfile, image_topic, start_stamp, end_stamp)
+        topic_info_dict = get_topic_dict(image_bagfile)[image_topic]
+        # TODO shows total number of messages, not selected frames
         n_frame = topic_info_dict['messages']
 
         if show_progress_bar:
@@ -119,10 +128,10 @@ def bag_to_video(input_bagfile,
             print('[bag_to_video] No timestamp found in all images')
             print('[bag_to_video] Skipping {}'.format(image_topic))
             break
-        start_stamp = stamp
+        first_stamp = stamp
         width, height = img.shape[1], img.shape[0]
 
-        creation_time = datetime.datetime.utcfromtimestamp(start_stamp)
+        creation_time = datetime.datetime.utcfromtimestamp(first_stamp)
         time_format = '%y-%m-%d %h:%M:%S'
         writer = FFMPEG_VideoWriter(
             tmp_videopath,
@@ -140,7 +149,7 @@ def bag_to_video(input_bagfile,
         for i, (stamp, _, bgr_img, _) in enumerate(images):
             if show_progress_bar:
                 progress.update(1)
-            aligned_stamp = stamp - start_stamp
+            aligned_stamp = stamp - first_stamp
             # write the current image until the next frame's timestamp.
             while current_time < aligned_stamp:
                 current_time += dt
@@ -160,6 +169,7 @@ def bag_to_video(input_bagfile,
                 set_audio(AudioFileClip(wav_outpath))
             clip_output.write_videofile(
                 output_filepath,
+                codec="libx264",
                 verbose=False,
                 logger='bar' if show_progress_bar else None)
         print('[bag_to_video] Created video is saved to {}'

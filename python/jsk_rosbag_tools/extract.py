@@ -1,5 +1,7 @@
 import numpy as np
+import sys
 import rosbag
+import rospy
 
 from jsk_rosbag_tools.cv import compressed_format
 from jsk_rosbag_tools.cv import decompresse_imgmsg
@@ -43,7 +45,8 @@ def extract_oneshot_topic(bag_filepath, topic_name):
     return msg
 
 
-def extract_image_topic(bag_filepath, topic_name):
+def extract_image_topic(bag_filepath, topic_name,
+                        start_stamp=rospy.Time(0), end_stamp=rospy.Time(sys.maxsize)):
     topic_dict = get_topic_dict(bag_filepath)
     if topic_name not in topic_dict:
         raise ValueError("topic ({}) is not included in bagfile ({})."
@@ -51,7 +54,7 @@ def extract_image_topic(bag_filepath, topic_name):
 
     with rosbag.Bag(bag_filepath, 'r') as input_rosbag:
         for topic, msg, _ in input_rosbag.read_messages(
-                topics=[topic_name]):
+                topics=[topic_name], start_time=start_stamp, end_time=end_stamp):
             topic_type = topic_dict[topic]['type']
             if topic_type == 'sensor_msgs/Image':
                 bgr_img = msg_to_img(msg)
