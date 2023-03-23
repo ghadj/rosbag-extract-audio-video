@@ -47,14 +47,16 @@ def main():
     image_topics = None
     output_filepath = None
     output_dirpath = None
-    if len(args.image_topic) == 1:
-        image_topic = args.image_topic[0]
-        output_filepath = args.out
-    elif len(args.image_topic) > 1:
-        image_topics = args.image_topic
+
+    if osp.isdir(args.out):
         output_dirpath = args.out
     else:
-        output_dirpath = args.out
+        output_filepath = args.out
+
+    if len(args.image_topic) == 1:
+        image_topic = args.image_topic[0]
+    elif len(args.image_topic) > 1:
+        image_topics = args.image_topic
 
     bag_to_video(image_bagfile, audio_bagfile,
                  output_filepath=output_filepath,

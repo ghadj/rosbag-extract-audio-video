@@ -74,10 +74,10 @@ def bag_to_video(image_bagfile,
         for image_topic in target_image_topics:
             output_filepaths.append(
                 osp.join(
-                    output_dirpath,
-                    topic_name_to_file_name(image_topic) + '.mp4'))
-        wav_outpath = osp.join(output_dirpath, '{}.wav'.format(
-            topic_name_to_file_name(audio_topic)))
+                    output_dirpath, '{}_{}.mp4'.format(
+                        osp.basename(image_bagfile).split('.bag')[0], topic_name_to_file_name(image_topic))))
+        wav_outpath = osp.join(output_dirpath, '{}_{}.wav'.format(
+            osp.basename(audio_bagfile).split('.bag')[0], topic_name_to_file_name(audio_topic)))
 
     # check topics exist.
     not_exists_topics = list(filter(
@@ -104,7 +104,8 @@ def bag_to_video(image_bagfile,
         if filepath_dir:
             makedirs(filepath_dir)
         if audio_exists:
-            tmp_videopath = tempfile.NamedTemporaryFile(suffix='.mp4').name
+            tmp_videopath = '{}_image-only.mp4'.format(output_filepath.split('.mp4')[0])
+            # tmp_videopath = tempfile.NamedTemporaryFile(suffix='.mp4').name
         else:
             tmp_videopath = output_filepath
 
