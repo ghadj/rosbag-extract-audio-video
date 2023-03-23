@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>jsk_rosbag_tools</name>
+  <name>rosbag-extract-audio-video</name>
   <version>2.2.12</version>
   <description>The rosbag tools</description>
   <license>BSD</license>
