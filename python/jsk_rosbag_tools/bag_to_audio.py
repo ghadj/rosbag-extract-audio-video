@@ -65,6 +65,8 @@ def bag_to_audio(bag_filepath,
         if len(all_audio_topics) > 1:
             wav_outpath_i = '{}_({}).wav'.format(wav_outpath.split(
                 '.wav')[0], audio_topic.replace('/', '_slash_'))
+        else:
+            wav_outpath_i = wav_outpath
 
         makedirs(osp.dirname(wav_outpath_i))
         wav_write(wav_outpath_i, rate=samplerate, data=audio_buffer)
