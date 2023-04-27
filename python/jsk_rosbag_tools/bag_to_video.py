@@ -76,8 +76,10 @@ def bag_to_video(image_bagfile,
                 osp.join(
                     output_dirpath, '{}_{}.mp4'.format(
                         osp.basename(image_bagfile).split('.bag')[0], topic_name_to_file_name(image_topic))))
-        wav_outpath = osp.join(output_dirpath, '{}_{}.wav'.format(
-            osp.basename(audio_bagfile).split('.bag')[0], topic_name_to_file_name(audio_topic)))
+
+        if audio_bagfile is not None:
+            wav_outpath = osp.join(output_dirpath, '{}_{}.wav'.format(
+                osp.basename(audio_bagfile).split('.bag')[0], topic_name_to_file_name(audio_topic)))
 
     # check topics exist.
     not_exists_topics = list(filter(
@@ -88,12 +90,17 @@ def bag_to_video(image_bagfile,
             ' {}'.format(list(not_exists_topics)))
 
     print('[bag_to_video] Extracting audio from rosbag file.')
-    audio_exists = bag_to_audio(audio_bagfile, wav_outpath,
-                                start_stamp=start_stamp,
-                                end_stamp=end_stamp,
-                                samplerate=samplerate,
-                                channels=channels,
-                                topic_name=audio_topic)
+
+    # If audio bagfile is given check if audio topic exists
+    if audio_bagfile is None:
+        audio_exists = False
+    else:
+        audio_exists = bag_to_audio(audio_bagfile, wav_outpath,
+                                    start_stamp=start_stamp,
+                                    end_stamp=end_stamp,
+                                    samplerate=samplerate,
+                                    channels=channels,
+                                    topic_name=audio_topic)
 
     dt = 1.0 / fps
     for image_topic, output_filepath in zip(target_image_topics,
@@ -104,7 +111,8 @@ def bag_to_video(image_bagfile,
         if filepath_dir:
             makedirs(filepath_dir)
         if audio_exists:
-            tmp_videopath = '{}_image-only.mp4'.format(output_filepath.split('.mp4')[0])
+            tmp_videopath = '{}_image-only.mp4'.format(
+                output_filepath.split('.mp4')[0])
             # tmp_videopath = tempfile.NamedTemporaryFile(suffix='.mp4').name
         else:
             tmp_videopath = output_filepath

@@ -28,7 +28,7 @@ def main():
     parser.add_argument('--no-progress-bar', action='store_true',
                         help='Don\'t show progress bar.')
     parser.add_argument('--image-bagfile', type=str)
-    parser.add_argument('--audio-bagfile', type=str)
+    parser.add_argument('--audio-bagfile', type=str, default=None)
 
     args = parser.parse_args()
 
