@@ -18,5 +18,22 @@
                 "-o", "", // output directory
             ]
         },
+        {
+            "name": "Bag-to-Video",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/bag_to_video.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--image-bagfile", "", // path to bagfile containing the image topic
+                "--image-topic", "",   // image topic to be extracted
+                "--audio-bagfile", "", // path to bagfile containing the audio topic
+                "--audio-topic", "",   // audio topic to be extracted
+                "--start", "",         // start timestamp
+                "--end", "",           // end timestamp
+                "--out", "",           // output directory
+            ]
+        },
     ]
 }
