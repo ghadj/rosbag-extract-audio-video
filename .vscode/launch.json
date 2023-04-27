@@ -1,0 +1,22 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Bag-to-Audio",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/bag_to_audio.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "",       // path to rosbag file
+                "-s", "", // start timestamp
+                "-e", "", // end timestamp
+                "-o", "", // output directory
+            ]
+        },
+    ]
+}

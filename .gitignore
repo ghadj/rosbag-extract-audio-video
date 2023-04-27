@@ -1,3 +1,4 @@
 requirements.txt
-.vscode
+.vscode/*
+!.vscode/launch.json
 __pycache__
