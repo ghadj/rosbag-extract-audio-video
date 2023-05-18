@@ -27,17 +27,18 @@ def main():
                         nargs='+', help='Topic name to extract.')
     parser.add_argument('--no-progress-bar', action='store_true',
                         help='Don\'t show progress bar.')
-    parser.add_argument('--image-bagfile', type=str)
+    parser.add_argument('--image-bagfiles', type=str, default=[],
+                        nargs='+', help='List of image bagfiles.')
     parser.add_argument('--audio-bagfile', type=str, default=None)
 
     args = parser.parse_args()
 
     if len(args.out) == 0:
         args.out = osp.join(
-            osp.dirname(args.image_bagfile),
-            osp.splitext(osp.basename(args.image_bagfile))[0])
+            osp.dirname(args.image_bagfiles[0]),
+            osp.splitext(osp.basename(args.image_bagfiles[0]))[0])
 
-    image_bagfile = args.image_bagfile
+    image_bagfiles = args.image_bagfiles
     audio_bagfile = args.audio_bagfile
 
     start_stamp = rospy.Time(args.start)
@@ -58,7 +59,7 @@ def main():
     elif len(args.image_topic) > 1:
         image_topics = args.image_topic
 
-    bag_to_video(image_bagfile, audio_bagfile,
+    bag_to_video(image_bagfiles, audio_bagfile,
                  output_filepath=output_filepath,
                  output_dirpath=output_dirpath,
                  image_topic=image_topic,

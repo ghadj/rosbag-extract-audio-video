@@ -3,26 +3,27 @@ import os
 import os.path as osp
 import sys
 import tempfile
+from itertools import chain
 
 import cv2
 import rospy
 
-from moviepy.audio.io.AudioFileClip import AudioFileClip
-from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
-from moviepy.video.io.VideoFileClip import VideoFileClip
-from tqdm import tqdm
-
 from jsk_rosbag_tools.bag_to_audio import bag_to_audio
-from jsk_rosbag_tools.extract import extract_image_topic
-from jsk_rosbag_tools.extract import get_image_topic_names
+from jsk_rosbag_tools.extract import extract_image_topic, get_image_topic_names
 from jsk_rosbag_tools.image_utils import \
     resize_keeping_aspect_ratio_wrt_target_size
 from jsk_rosbag_tools.info import get_topic_dict
 from jsk_rosbag_tools.makedirs import makedirs
 from jsk_rosbag_tools.topic_name_utils import topic_name_to_file_name
 
+from moviepy.audio.io.AudioFileClip import AudioFileClip
+from moviepy.video.io.ffmpeg_writer import FFMPEG_VideoWriter
+from moviepy.video.io.VideoFileClip import VideoFileClip
 
-def bag_to_video(image_bagfile,
+from tqdm import tqdm
+
+
+def bag_to_video(image_bagfiles,
                  audio_bagfile=None,
                  output_filepath=None,
                  output_dirpath=None,
@@ -43,10 +44,15 @@ def bag_to_video(image_bagfile,
     If image_topic_names is None, make all color images into video.
 
     """
-    if not os.path.exists(image_bagfile):
-        print('[bag_to_video] Input bagfile {} not exists.'
-              .format(image_bagfile))
+    if len(image_bagfiles) == 0:
+        print('[bag_to_video] No bagfiles given.')
         sys.exit(1)
+
+    for image_bagfile_i in image_bagfiles:
+        if not os.path.exists(image_bagfile_i):
+            print('[bag_to_video] Input bagfile {} not exists.'
+                  .format(image_bagfile_i))
+            sys.exit(1)
 
     if output_filepath is not None and output_dirpath is not None:
         raise ValueError(
@@ -54,7 +60,7 @@ def bag_to_video(image_bagfile,
 
     output_filepaths = []
     target_image_topics = []
-    candidate_topics = get_image_topic_names(image_bagfile)
+    candidate_topics = get_image_topic_names(image_bagfiles[0])
 
     if output_filepath is not None:
         if image_topic is None:
@@ -67,7 +73,7 @@ def bag_to_video(image_bagfile,
         # output_dirpath is specified case.
         if image_topics is None:
             # record all color topics
-            image_topics = get_image_topic_names(image_bagfile,
+            image_topics = get_image_topic_names(image_bagfiles[0],
                                                  rgb_only=True)
         target_image_topics = image_topics
 
@@ -75,7 +81,7 @@ def bag_to_video(image_bagfile,
             output_filepaths.append(
                 osp.join(
                     output_dirpath, '{}_{}.mp4'.format(
-                        osp.basename(image_bagfile).split('.bag')[0], topic_name_to_file_name(image_topic))))
+                        osp.basename(image_bagfiles[0]).split('.bag')[0], topic_name_to_file_name(image_topic))))
 
         if audio_bagfile is not None:
             wav_outpath = osp.join(output_dirpath, '{}_{}.wav'.format(
@@ -105,8 +111,8 @@ def bag_to_video(image_bagfile,
     dt = 1.0 / fps
     for image_topic, output_filepath in zip(target_image_topics,
                                             output_filepaths):
-        print('[bag_to_video] Creating video of {} from rosbag file {}.'
-              .format(image_topic, image_bagfile))
+        print('[bag_to_video] Creating video of {} from rosbag files {}.'
+              .format(image_topic, image_bagfiles))
         filepath_dir = osp.dirname(output_filepath)
         if filepath_dir:
             makedirs(filepath_dir)
@@ -117,11 +123,22 @@ def bag_to_video(image_bagfile,
         else:
             tmp_videopath = output_filepath
 
-        images = extract_image_topic(
-            image_bagfile, image_topic, start_stamp, end_stamp)
-        topic_info_dict = get_topic_dict(image_bagfile)[image_topic]
-        # TODO shows total number of messages, not selected frames
-        n_frame = topic_info_dict['messages']
+        # initialize empty iterable for the images of all bagfiles
+        images = iter([])
+
+        # initialize total number of frames of all bagfiles
+        n_frame = 0
+        
+        for image_bagfile_i in image_bagfiles:
+            images_i = extract_image_topic(
+                image_bagfile_i, image_topic, start_stamp, end_stamp)
+            topic_info_dict = get_topic_dict(image_bagfile_i)[image_topic]
+
+            # TODO shows total number of messages, not selected frames
+            n_frame_i = topic_info_dict['messages']
+
+            images = chain(images, images_i)
+            n_frame = n_frame + n_frame_i
 
         if show_progress_bar:
             progress = tqdm(total=n_frame)
